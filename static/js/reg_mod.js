@@ -1,44 +1,57 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const regBtn = document.getElementById("reg-btn");
-  const regModal = document.getElementById("registerModal");
-  const cancelBtn = document.getElementById("register-cancel");
-  const regForm = document.getElementById("register-form");
+// сабмит формы
+regForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-  // открыть модалку
-  regBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    regModal.showModal();
-  });
+  const formData = new FormData(regForm);
 
-  // закрыть модалку
-  cancelBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    regModal.close();
-  });
+  try {
+    let avatarId = null;
 
-  // сабмит формы
-  regForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
+    // если пользователь загрузил аватар
+    const avatarFile = formData.get("avatar");
+    if (avatarFile && avatarFile.size > 0) {
+      const imgForm = new FormData();
+      imgForm.append("image", avatarFile);
 
-    const formData = new FormData(regForm);
-
-    try {
-      const resp = await fetch("/api/v1/registration/", {
+      const imgResp = await fetch("/api/v1/images/", {
         method: "POST",
-        body: formData,
+        body: imgForm,
       });
 
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        alert("Ошибка: " + (err.detail || resp.status));
+      if (!imgResp.ok) {
+        const err = await imgResp.json().catch(() => ({}));
+        alert("Ошибка загрузки фото: " + (err.detail || imgResp.status));
         return;
       }
 
-      alert("Регистрация успешна!");
-      regModal.close();
-      // window.location.reload(); // если нужно
-    } catch (err) {
-      alert("Ошибка соединения: " + err);
+      const imgData = await imgResp.json();
+      avatarId = imgData.id;
     }
-  });
+
+    // готовим JSON для регистрации
+    const userData = {
+      username: formData.get("username"),
+      email: formData.get("email"),
+      password: formData.get("password"),
+      avatar_id: avatarId, // ключ совпадает с сериализатором
+    };
+
+    const resp = await fetch("/api/v1/registration/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      alert("Ошибка: " + (err.detail || resp.status));
+      return;
+    }
+
+    alert("Регистрация успешна!");
+    regModal.close();
+    // window.location.reload(); // если нужно
+  } catch (err) {
+    alert("Ошибка соединения: " + err);
+  }
 });
