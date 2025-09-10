@@ -54,6 +54,11 @@ template_patterns = [
         view=TemplateView.as_view(template_name="api/base.html"),
         name="base",
     ),
+    path(
+        route="friends/invites/",
+        view=TemplateView.as_view(template_name="api/invites.html"),
+        name="friend-invites",
+    ),
 ]
 
 urlpatterns = (
